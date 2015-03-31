@@ -1,0 +1,1 @@
+module.exports = function() { game.state.add("boot", require("./states/boot"));game.state.add("load", require("./states/load"));game.state.add("menu", require("./states/menu"));game.state.add("play", require("./states/play")); };
