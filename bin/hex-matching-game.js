@@ -1,7 +1,35 @@
-var _ = require('lodash');
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var states = require('./states');
+window.game = new Phaser.Game(800, 600, Phaser.AUTO);
 
-var gridSizeX = 8,
-    gridSizeY = 8,
+states();
+game.state.start('boot');
+
+
+},{"./states":2}],2:[function(require,module,exports){
+module.exports = function() { game.state.add("boot", require("./states/boot"));game.state.add("load", require("./states/load"));game.state.add("menu", require("./states/menu"));game.state.add("play", require("./states/play")); };
+},{"./states/boot":3,"./states/load":4,"./states/menu":5,"./states/play":6}],3:[function(require,module,exports){
+module.exports = {
+    create: function() {
+    },
+    update: function() {
+        game.state.start('play');
+    }
+};
+
+},{}],4:[function(require,module,exports){
+module.exports = {
+    create: function() {
+    },
+    update: function() {
+    },
+};
+
+},{}],5:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{"dup":4}],6:[function(require,module,exports){
+var gridSizeX = 6,
+    gridSizeY = 6,
     hexagonArray = [],
     validTint = 0xb5fd40,
     invalidTint = 0xcd567d,
@@ -19,6 +47,7 @@ var moveIndex,
     sectorHeight,
     hoverHex,
     gradient;
+
 
 function getHexPosition() {
     var xOffset = game.input.worldX - hexagonGroup.x;
@@ -191,30 +220,41 @@ module.exports = {
         selecting = selectedHexes.length > 0;
 
         if(selecting && hoverHex) {
-            var pathMatch = _.findLastIndex(selectedHexes, function(hex) {
-                return hex.x === hoverHex.x && hex.y === hoverHex.y;
-            });
+            var contains = false;
+            var h;
+            for(h = selectedHexes.length - 1; h >= 0; h--) {
+                var hex = selectedHexes[h];
+                if(hex.x === hoverHex.x && hex.y === hoverHex.y) {
+                    contains = true;
+                    break;
+                }
+            }
 
-            if(pathMatch === -1) {
+            if(!contains) {
                 var lastHex = selectedHexes[selectedHexes.length - 1];
                 var adjacent = getAdjacent(lastHex.x, lastHex.y);
-                var hoverIsAdjacent = _.some(adjacent, function(arg) {
-                    return arg.x === hoverHex.x && arg.y === hoverHex.y;
-                });
 
-                if(hoverIsAdjacent)
+                for(var a in adjacent) {
+                    var adj = adjacent[a];
+                    if(hoverHex.x === adj.x && hoverHex.y === adj.y) {
+                        contains = true;
+                        break;
+                    }
+                }
+                
+                if(contains) {
                     selectedHexes.push(hoverHex);
+                }
                 else {
                     selectedHexes = [];
                     selecting = false;
                 }
             }
             else {
-                while(selectedHexes.length > pathMatch + 1)
+                while(selectedHexes.length > h + 1)
                     selectedHexes.pop();
             }
         }
-
     },
     render: function() {
         clearMarker();
@@ -236,3 +276,5 @@ module.exports = {
         }
     }
 };
+
+},{}]},{},[1,3,4,5,6]);
