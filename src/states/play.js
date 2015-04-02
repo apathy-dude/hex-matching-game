@@ -3,12 +3,16 @@ var _ = require('lodash');
 var gridSizeX = 8,
     gridSizeY = 8,
     hexagonArray = [],
-    validTint = 0xb5fd40,
-    invalidTint = 0xcd567d,
+    validTint = 0x00aa00,
+    invalidTint = 0xaa0000,
     noTint = 0xffffff,
+    selectedTint = 0xffff00,
     selectedHexes = [],
+    poppedHexes = [],
+    emptyHexex = [],
     selecting = false,
-    selected = false;
+    selected = false,
+    tweenSpeed = 100;
 
 var moveIndex,
     hexagonGroup,
@@ -19,6 +23,17 @@ var moveIndex,
     sectorHeight,
     hoverHex,
     gradient;
+
+var tiles = [
+    'red',
+    'green',
+    'blue',
+    'purple',
+    'yellow',
+    'teal',
+    'white',
+    'black'
+];
 
 function getHexPosition() {
     var xOffset = game.input.worldX - hexagonGroup.x;
@@ -124,6 +139,10 @@ function placeMarker(posX, posY) {
     hexagonArray[posX][posY].tint = validTint;
 }
 
+function newTile(x, y) {
+    return game.add.sprite(x, y, tiles[_.random(tiles.length - 1)]);
+}
+
 module.exports = {
     preload: function() {
         var hexagon = game.load.image('hexagon', 'src/assets/images/hexagon.png');
@@ -137,6 +156,15 @@ module.exports = {
 
             hex.destroy();
         });
+
+        game.load.image('red', 'src/assets/images/red-gem.png');
+        game.load.image('green', 'src/assets/images/green-gem.png');
+        game.load.image('blue', 'src/assets/images/blue-gem.png');
+        game.load.image('purple', 'src/assets/images/purple-gem.png');
+        game.load.image('yellow', 'src/assets/images/yellow-gem.png');
+        game.load.image('teal', 'src/assets/images/teal-gem.png');
+        game.load.image('white', 'src/assets/images/white-gem.png');
+        game.load.image('black', 'src/assets/images/black-gem.png');
     },
     create: function() {
         hexagonGroup = game.add.group();
@@ -159,6 +187,7 @@ module.exports = {
                 hexagon = game.add.sprite(hexagonX, hexagonY, 'hexagon');
                 hexagonGroup.add(hexagon);
                 hexagonArray[i][j] = hexagon;
+                poppedHexes.push({ x: i, y: j });
             }
         }
 
@@ -183,9 +212,76 @@ module.exports = {
     },
     update: function() {
         if(selected) {
+            if(selectedHexes.length >= 3) {
+                _.forEach(selectedHexes, function(hex) {
+                    var tile = hexagonArray[hex.x][hex.y].tile;
+
+                    var fadeOut = game.add.tween(tile)
+                        .to({ alpha: 0 }, 300);
+
+                    fadeOut.onComplete.add(function() {
+                        tile.destroy();
+                        hexagonArray[hex.x][hex.y].tile = undefined;
+                        poppedHexes.push(hex);
+                    });
+
+                    fadeOut.start();
+                });
+            }
+
             selected = false;
             selecting = false;
             selectedHexes = [];
+        }
+
+        if(poppedHexes.length > 0) {
+            var leftOver = [];
+            var tweens = [];
+            _.forEach(poppedHexes, function(hex, index) {
+                var x = hex.x;
+                var y = hex.y;
+                var tile, slideDown;
+
+                if(y === 0) {
+                    var currHex = hexagonArray[x][y];
+                    tile = newTile(currHex.x, currHex.y - hexagonHeight);
+                    tile.aplpha = 0;
+                    hexagonGroup.add(tile);
+
+                    slideDown = game.add.tween(tile)
+                        .to({ y: currHex.y, alpha: 1 }, tweenSpeed);
+
+                    slideDown.onComplete.add(function() {
+                        currHex.tile = tile;
+                    });
+
+                    tweens.push(slideDown);
+                }
+                else if(hexagonArray[x][y - 1].tile !== undefined) {
+                    tile = hexagonArray[x][y - 1].tile;
+
+                    slideDown = game.add.tween(tile)
+                        .to({ y: tile.y + hexagonHeight }, tweenSpeed);
+
+                    slideDown.onComplete.add(function() {
+                        hexagonArray[x][y].tile = tile;
+                        hexagonArray[x][y - 1].tile = undefined;
+                        poppedHexes.push({ x: x, y: y - 1 });
+                    });
+
+                    tweens.push(slideDown);
+                }
+                else {
+                    leftOver.push(index);
+                }
+
+            });
+
+            poppedHexes = _.at(poppedHexes, leftOver);
+
+            _.forEach(tweens, function(tween) {
+                tween.start();
+            });
         }
 
         selecting = selectedHexes.length > 0;
@@ -201,9 +297,13 @@ module.exports = {
                 var hoverIsAdjacent = _.some(adjacent, function(arg) {
                     return arg.x === hoverHex.x && arg.y === hoverHex.y;
                 });
+                var lastTile = hexagonArray[lastHex.x][lastHex.y].tile;
+                var hoverTile = hexagonArray[hoverHex.x][hoverHex.y].tile;
 
-                if(hoverIsAdjacent)
-                    selectedHexes.push(hoverHex);
+                if(hoverIsAdjacent) {
+                    if(lastTile.key === hoverTile.key)
+                        selectedHexes.push(hoverHex);
+                }
                 else {
                     selectedHexes = [];
                     selecting = false;
@@ -215,6 +315,15 @@ module.exports = {
             }
         }
 
+        for(var c in hexagonArray) {
+            var column = hexagonArray[c];
+            for(var h in column) {
+                var hex = column[h];
+                if(!hex.tile) {
+                }
+            }
+        }
+
     },
     render: function() {
         clearMarker();
@@ -222,16 +331,25 @@ module.exports = {
             placeMarker(hoverHex.x, hoverHex.y);
 
         if(selecting) {
-            var adjacent = getAdjacent(selectedHexes[selectedHexes.length - 1].x, selectedHexes[selectedHexes.length - 1].y);
+            var lastHex = selectedHexes[selectedHexes.length - 1];
             var hex;
-            for(var a in adjacent) {
-                hex = adjacent[a];
-                hexagonArray[hex.x][hex.y].tint = validTint;
+
+            if(lastHex) {
+                var lastTile = hexagonArray[lastHex.x][lastHex.y].tile;
+                var adjacent = getAdjacent(lastHex.x, lastHex.y);
+                for(var a in adjacent) {
+                    hex = adjacent[a];
+                    var tile = hexagonArray[hex.x][hex.y].tile;
+                    if(lastTile.key === tile.key)
+                        hexagonArray[hex.x][hex.y].tint = validTint;
+                    else
+                        hexagonArray[hex.x][hex.y].tint = invalidTint;
+                }
             }
 
             for(var h in selectedHexes) {
                 hex = selectedHexes[h];
-                hexagonArray[hex.x][hex.y].tint = invalidTint;
+                hexagonArray[hex.x][hex.y].tint = selectedTint;
             }
         }
     }
