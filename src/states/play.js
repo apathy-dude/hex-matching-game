@@ -1,4 +1,5 @@
 var _ = require('lodash');
+var Tile = require('../Tile');
 
 var gridSizeX = 8,
     gridSizeY = 8,
@@ -140,7 +141,9 @@ function placeMarker(posX, posY) {
 }
 
 function newTile(x, y) {
-    return game.add.sprite(x, y, tiles[_.random(tiles.length - 1)]);
+    var t = new Tile(tiles[_.random(tiles.length - 1)]);
+    t.sprite = game.add.sprite(x, y, t.type);
+    return t;
 }
 
 module.exports = {
@@ -220,7 +223,7 @@ module.exports = {
                         .to({ alpha: 0 }, 300);
 
                     fadeOut.onComplete.add(function() {
-                        tile.destroy();
+                        tile.sprite.destroy();
                         hexagonArray[hex.x][hex.y].tile = undefined;
                         poppedHexes.push(hex);
                     });
@@ -245,10 +248,10 @@ module.exports = {
                 if(y === 0) {
                     var currHex = hexagonArray[x][y];
                     tile = newTile(currHex.x, currHex.y - hexagonHeight);
-                    tile.aplpha = 0;
-                    hexagonGroup.add(tile);
+                    tile.sprite.alpha = 0;
+                    hexagonGroup.add(tile.sprite);
 
-                    slideDown = game.add.tween(tile)
+                    slideDown = game.add.tween(tile.sprite)
                         .to({ y: currHex.y, alpha: 1 }, tweenSpeed);
 
                     slideDown.onComplete.add(function() {
@@ -260,8 +263,8 @@ module.exports = {
                 else if(hexagonArray[x][y - 1].tile !== undefined) {
                     tile = hexagonArray[x][y - 1].tile;
 
-                    slideDown = game.add.tween(tile)
-                        .to({ y: tile.y + hexagonHeight }, tweenSpeed);
+                    slideDown = game.add.tween(tile.sprite)
+                        .to({ y: tile.sprite.y + hexagonHeight }, tweenSpeed);
 
                     slideDown.onComplete.add(function() {
                         hexagonArray[x][y].tile = tile;
@@ -301,7 +304,7 @@ module.exports = {
                 var hoverTile = hexagonArray[hoverHex.x][hoverHex.y].tile;
 
                 if(hoverIsAdjacent) {
-                    if(lastTile.key === hoverTile.key)
+                    if(lastTile.match(hoverTile))
                         selectedHexes.push(hoverHex);
                 }
                 else {
@@ -340,7 +343,7 @@ module.exports = {
                 for(var a in adjacent) {
                     hex = adjacent[a];
                     var tile = hexagonArray[hex.x][hex.y].tile;
-                    if(lastTile.key === tile.key)
+                    if(lastTile.match(tile))
                         hexagonArray[hex.x][hex.y].tint = validTint;
                     else
                         hexagonArray[hex.x][hex.y].tint = invalidTint;

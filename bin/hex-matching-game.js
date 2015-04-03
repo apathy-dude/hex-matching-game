@@ -11806,6 +11806,29 @@
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],2:[function(require,module,exports){
+function Tile(type) {
+    var sprite = undefined;
+    this.type = type;
+
+    this.__defineSetter__("sprite", function(s) {
+        if(sprite && sprite.destory instanceof Function)
+            sprite.destroy();
+
+        sprite = s;
+    });
+
+    this.__defineGetter__("sprite", function() {
+        return sprite;
+    });
+}
+
+Tile.prototype.match = function(tile) {
+    return this.type === tile.type;
+};
+
+module.exports = Tile;
+
+},{}],3:[function(require,module,exports){
 var states = require('./states');
 window.game = new Phaser.Game(800, 600, Phaser.AUTO);
 
@@ -11813,9 +11836,9 @@ states();
 game.state.start('boot');
 
 
-},{"./states":3}],3:[function(require,module,exports){
+},{"./states":4}],4:[function(require,module,exports){
 module.exports = function() { game.state.add("boot", require("./states/boot"));game.state.add("load", require("./states/load"));game.state.add("menu", require("./states/menu"));game.state.add("play", require("./states/play")); };
-},{"./states/boot":4,"./states/load":5,"./states/menu":6,"./states/play":7}],4:[function(require,module,exports){
+},{"./states/boot":5,"./states/load":6,"./states/menu":7,"./states/play":8}],5:[function(require,module,exports){
 module.exports = {
     create: function() {
     },
@@ -11824,7 +11847,7 @@ module.exports = {
     }
 };
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = {
     create: function() {
     },
@@ -11832,10 +11855,11 @@ module.exports = {
     },
 };
 
-},{}],6:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],7:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"dup":6}],8:[function(require,module,exports){
 var _ = require('lodash');
+var Tile = require('../Tile');
 
 var gridSizeX = 8,
     gridSizeY = 8,
@@ -11977,7 +12001,9 @@ function placeMarker(posX, posY) {
 }
 
 function newTile(x, y) {
-    return game.add.sprite(x, y, tiles[_.random(tiles.length - 1)]);
+    var t = new Tile(tiles[_.random(tiles.length - 1)]);
+    t.sprite = game.add.sprite(x, y, t.type);
+    return t;
 }
 
 module.exports = {
@@ -12057,7 +12083,7 @@ module.exports = {
                         .to({ alpha: 0 }, 300);
 
                     fadeOut.onComplete.add(function() {
-                        tile.destroy();
+                        tile.sprite.destroy();
                         hexagonArray[hex.x][hex.y].tile = undefined;
                         poppedHexes.push(hex);
                     });
@@ -12082,10 +12108,10 @@ module.exports = {
                 if(y === 0) {
                     var currHex = hexagonArray[x][y];
                     tile = newTile(currHex.x, currHex.y - hexagonHeight);
-                    tile.aplpha = 0;
-                    hexagonGroup.add(tile);
+                    tile.sprite.alpha = 0;
+                    hexagonGroup.add(tile.sprite);
 
-                    slideDown = game.add.tween(tile)
+                    slideDown = game.add.tween(tile.sprite)
                         .to({ y: currHex.y, alpha: 1 }, tweenSpeed);
 
                     slideDown.onComplete.add(function() {
@@ -12097,8 +12123,8 @@ module.exports = {
                 else if(hexagonArray[x][y - 1].tile !== undefined) {
                     tile = hexagonArray[x][y - 1].tile;
 
-                    slideDown = game.add.tween(tile)
-                        .to({ y: tile.y + hexagonHeight }, tweenSpeed);
+                    slideDown = game.add.tween(tile.sprite)
+                        .to({ y: tile.sprite.y + hexagonHeight }, tweenSpeed);
 
                     slideDown.onComplete.add(function() {
                         hexagonArray[x][y].tile = tile;
@@ -12138,7 +12164,7 @@ module.exports = {
                 var hoverTile = hexagonArray[hoverHex.x][hoverHex.y].tile;
 
                 if(hoverIsAdjacent) {
-                    if(lastTile.key === hoverTile.key)
+                    if(lastTile.match(hoverTile))
                         selectedHexes.push(hoverHex);
                 }
                 else {
@@ -12177,7 +12203,7 @@ module.exports = {
                 for(var a in adjacent) {
                     hex = adjacent[a];
                     var tile = hexagonArray[hex.x][hex.y].tile;
-                    if(lastTile.key === tile.key)
+                    if(lastTile.match(tile))
                         hexagonArray[hex.x][hex.y].tint = validTint;
                     else
                         hexagonArray[hex.x][hex.y].tint = invalidTint;
@@ -12192,4 +12218,4 @@ module.exports = {
     }
 };
 
-},{"lodash":1}]},{},[2,4,5,6,7]);
+},{"../Tile":2,"lodash":1}]},{},[3,5,6,7,8]);
