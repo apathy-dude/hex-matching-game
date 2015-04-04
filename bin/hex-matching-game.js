@@ -11871,6 +11871,7 @@ var gridSizeX = 8,
     selectedHexes = [],
     poppedHexes = [],
     emptyHexex = [],
+    collectedTiles = {},
     selecting = false,
     selected = false,
     tweenSpeed = 100;
@@ -11883,7 +11884,8 @@ var moveIndex,
     sectorWidth,
     sectorHeight,
     hoverHex,
-    gradient;
+    gradient,
+    pointsText;
 
 var tiles = [
     'red',
@@ -12006,6 +12008,13 @@ function newTile(x, y) {
     return t;
 }
 
+function genPointsText(obj) {
+    return _.reduce(obj, function(result, value, key) {
+        key = key[0].toUpperCase() + key.slice(1);
+        return result + key + ': ' + value + '\n';
+    }, 'Score:\n');
+}
+
 module.exports = {
     preload: function() {
         var hexagon = game.load.image('hexagon', 'src/assets/images/hexagon.png');
@@ -12030,7 +12039,9 @@ module.exports = {
         game.load.image('black', 'src/assets/images/black-gem.png');
     },
     create: function() {
+        pointsText = game.add.text(0, 0, 'Score:', { font: '14px Arial', fill: '#000000' });
         hexagonGroup = game.add.group();
+
         game.stage.backgroundColor = '#ffffff';
 
         for(var i = 0; i < gridSizeX; i++) {
@@ -12079,6 +12090,11 @@ module.exports = {
                 _.forEach(selectedHexes, function(hex) {
                     var tile = hexagonArray[hex.x][hex.y].tile;
 
+                    if(!collectedTiles[tile.type])
+                        collectedTiles[tile.type] = 0;
+
+                    collectedTiles[tile.type]++;
+
                     var fadeOut = game.add.tween(tile)
                         .to({ alpha: 0 }, 300);
 
@@ -12090,6 +12106,8 @@ module.exports = {
 
                     fadeOut.start();
                 });
+
+                pointsText.text = genPointsText(collectedTiles);
             }
 
             selected = false;
