@@ -11893,9 +11893,9 @@ var tiles = [
     'blue',
     'purple',
     'yellow',
-    'teal',
-    'white',
-    'black'
+//    'teal',
+//    'white',
+//    'black'
 ];
 
 function getHexPosition() {
