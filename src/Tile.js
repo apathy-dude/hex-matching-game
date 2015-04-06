@@ -18,4 +18,8 @@ Tile.prototype.match = function(tile) {
     return this.type === tile.type;
 };
 
+Tile.prototype.points = function() {
+    return this.type[0].toUpperCase() + this.type.slice(1);
+};
+
 module.exports = Tile;

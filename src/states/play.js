@@ -28,14 +28,12 @@ var moveIndex,
     pointsText;
 
 var tiles = [
-    'red',
-    'green',
-    'blue',
-    'purple',
-    'yellow',
-//    'teal',
-//    'white',
-//    'black'
+    { type: 'red' },
+    { type: 'green' },
+    { type: 'blue' },
+    { type: 'purple' },
+    { type: 'yellow' },
+    { type: 'link', points: function() { return null; }, match: function() { return true; } }
 ];
 
 function getHexPosition() {
@@ -143,15 +141,21 @@ function placeMarker(posX, posY) {
 }
 
 function newTile(x, y) {
-    var t = new Tile(tiles[_.random(tiles.length - 1)]);
+    var type = tiles[_.random(tiles.length - 1)];
+    var t = new Tile(type.type);
+    t.match = type.match || t.match;
+    t.points = type.points || t.points;
+
     t.sprite = game.add.sprite(x, y, t.type);
     return t;
 }
 
 function genPointsText(obj) {
     return _.reduce(obj, function(result, value, key) {
-        key = key[0].toUpperCase() + key.slice(1);
-        return result + key + ': ' + value + '\n';
+        var type = value.type.points();
+        if(type === null)
+            return result;
+        return result + type + ': ' + value.count + '\n';
     }, 'Score:\n');
 }
 
@@ -174,9 +178,7 @@ module.exports = {
         game.load.image('blue', 'src/assets/images/blue-gem.png');
         game.load.image('purple', 'src/assets/images/purple-gem.png');
         game.load.image('yellow', 'src/assets/images/yellow-gem.png');
-        game.load.image('teal', 'src/assets/images/teal-gem.png');
-        game.load.image('white', 'src/assets/images/white-gem.png');
-        game.load.image('black', 'src/assets/images/black-gem.png');
+        game.load.image('link', 'src/assets/images/link.png');
     },
     create: function() {
         pointsText = game.add.text(0, 0, 'Score:', { font: '14px Arial', fill: '#000000' });
@@ -231,9 +233,9 @@ module.exports = {
                     var tile = hexagonArray[hex.x][hex.y].tile;
 
                     if(!collectedTiles[tile.type])
-                        collectedTiles[tile.type] = 0;
+                        collectedTiles[tile.type] = { count: 0, type: tile };
 
-                    collectedTiles[tile.type]++;
+                    collectedTiles[tile.type].count++;
 
                     var fadeOut = game.add.tween(tile)
                         .to({ alpha: 0 }, 300);
@@ -322,7 +324,7 @@ module.exports = {
                 var hoverTile = hexagonArray[hoverHex.x][hoverHex.y].tile;
 
                 if(hoverIsAdjacent) {
-                    if(lastTile.match(hoverTile))
+                    if(lastTile.match(hoverTile) || hoverTile.match(lastTile))
                         selectedHexes.push(hoverHex);
                 }
                 else {
@@ -361,7 +363,7 @@ module.exports = {
                 for(var a in adjacent) {
                     hex = adjacent[a];
                     var tile = hexagonArray[hex.x][hex.y].tile;
-                    if(lastTile.match(tile))
+                    if(lastTile.match(tile) || tile.match(lastTile))
                         hexagonArray[hex.x][hex.y].tint = validTint;
                     else
                         hexagonArray[hex.x][hex.y].tint = invalidTint;
