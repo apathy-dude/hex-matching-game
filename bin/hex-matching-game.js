@@ -11891,14 +11891,25 @@ var moveIndex,
     gradient,
     pointsText;
 
-var tiles = [
-    { type: 'red' },
-    { type: 'green' },
-    { type: 'blue' },
-    { type: 'purple' },
-    { type: 'yellow' },
-    { type: 'link', points: function() { return null; }, match: function() { return true; } }
-];
+var tiles = {
+    red: { type: 'red' },
+    green: { type: 'green' },
+    blue: { type: 'blue' },
+    purple: { type: 'purple' },
+    yellow: { type: 'yellow' },
+    link: { type: 'link', points: function() { return null; }, match: function() { return true; } }
+};
+
+var tileChance = {
+    red: 100,
+    green: 100,
+    blue: 100,
+    purple: 100,
+    yellow: 100,
+    link: 5
+};
+
+var tileChanceSum;
 
 function getHexPosition() {
     var xOffset = game.input.worldX - hexagonGroup.x;
@@ -12005,7 +12016,26 @@ function placeMarker(posX, posY) {
 }
 
 function newTile(x, y) {
-    var type = tiles[_.random(tiles.length - 1)];
+    if(!tileChanceSum) {
+        tileChanceSum = _.reduce(tileChance, function(result, value, key) {
+            return result += value;
+        }, 0);
+    }
+
+    var val = _.random(tileChanceSum);
+    var tileType;
+
+    for(var c in tileChance) {
+        var chance = tileChance[c];
+        val -= chance;
+
+        if(val <= 0) {
+            tileType = c;
+            break;
+        }
+    }
+
+    var type = tiles[tileType];
     var t = new Tile(type.type);
     t.match = type.match || t.match;
     t.points = type.points || t.points;
