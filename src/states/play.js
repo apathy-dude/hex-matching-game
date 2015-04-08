@@ -191,7 +191,7 @@ function genPointsText(obj) {
 
 module.exports = {
     preload: function() {
-        var hexagon = game.load.image('hexagon', 'src/assets/images/hexagon.png');
+        var hexagon = game.load.image('hexagon', 'assets/images/hexagon.png');
         hexagon.onFileComplete.add(function() {
             var hex = game.add.sprite(0, 0, arguments[1]);
             hexagonWidth = hex.texture.width;
@@ -203,12 +203,12 @@ module.exports = {
             hex.destroy();
         });
 
-        game.load.image('red', 'src/assets/images/red-gem.png');
-        game.load.image('green', 'src/assets/images/green-gem.png');
-        game.load.image('blue', 'src/assets/images/blue-gem.png');
-        game.load.image('purple', 'src/assets/images/purple-gem.png');
-        game.load.image('yellow', 'src/assets/images/yellow-gem.png');
-        game.load.image('link', 'src/assets/images/link.png');
+        game.load.image('red', 'assets/images/red-gem.png');
+        game.load.image('green', 'assets/images/green-gem.png');
+        game.load.image('blue', 'assets/images/blue-gem.png');
+        game.load.image('purple', 'assets/images/purple-gem.png');
+        game.load.image('yellow', 'assets/images/yellow-gem.png');
+        game.load.image('link', 'assets/images/link.png');
     },
     create: function() {
         pointsText = game.add.text(0, 0, 'Score:', { font: '14px Arial', fill: '#000000' });
