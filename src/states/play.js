@@ -402,7 +402,8 @@ module.exports = {
 
             for(var h in selectedHexes) {
                 hex = selectedHexes[h];
-                hexagonArray[hex.x][hex.y].tint = selectedTint;
+                if(hex instanceof Object)
+                    hexagonArray[hex.x][hex.y].tint = selectedTint;
             }
         }
     }

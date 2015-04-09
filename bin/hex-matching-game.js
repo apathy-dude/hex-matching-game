@@ -11834,7 +11834,7 @@ module.exports = Tile;
 
 },{}],3:[function(require,module,exports){
 var states = require('./states');
-window.game = new Phaser.Game(800, 600, Phaser.AUTO);
+window.game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO);
 
 states();
 game.state.start('boot');
@@ -12266,7 +12266,8 @@ module.exports = {
 
             for(var h in selectedHexes) {
                 hex = selectedHexes[h];
-                hexagonArray[hex.x][hex.y].tint = selectedTint;
+                if(hex instanceof Object)
+                    hexagonArray[hex.x][hex.y].tint = selectedTint;
             }
         }
     }
