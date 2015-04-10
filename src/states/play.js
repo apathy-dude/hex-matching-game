@@ -14,7 +14,9 @@ var gridSizeX = 8,
     collectedTiles = {},
     selecting = false,
     selected = false,
-    tweenSpeed = 100;
+    checkScale = true,
+    tweenSpeed = 100,
+    hexScale = 1;
 
 var moveIndex,
     hexagonGroup,
@@ -211,6 +213,15 @@ module.exports = {
         game.load.image('link', 'assets/images/link.png');
     },
     create: function() {
+        var maxWidth = game.width / gridSizeX; 
+        var maxHeight = game.height / gridSizeY;
+
+        if(maxWidth < hexagonWidth || maxHeight < hexagonHeight) {
+            var w = maxWidth / hexagonWidth;
+            var h = maxHeight / hexagonHeight;
+            hexScale = w < h ? w : h;
+        }
+
         pointsText = game.add.text(0, 0, 'Score:', { font: '14px Arial', fill: '#000000' });
         hexagonGroup = game.add.group();
 
@@ -380,6 +391,51 @@ module.exports = {
     },
     render: function() {
         clearMarker();
+        if(checkScale) {
+
+            for(var i = 0; i < gridSizeX; i++) {
+                for(var j = 0; j < gridSizeY; j++) {
+                    var hexagonX, hexagonY, hexagon;
+
+                    if(i % 2 === 0) { // Even columns
+                        hexagonX = hexagonWidth * hexScale * i - i * hexagonWidth * hexScale * 0.25;
+                        hexagonY = hexagonHeight * j * hexScale;
+                    }
+                    else { // Odd columns
+                        hexagonX = hexagonWidth * i * 0.75 * hexScale;
+                        hexagonY = hexagonHeight * hexScale * j + hexagonHeight * hexScale * 0.5;
+                    }
+                    
+                    var displaceHex = hexagonArray[i][j];
+
+                    displaceHex.x = hexagonX;
+                    displaceHex.y = hexagonY;
+
+                    if(displaceHex.tile && displaceHex.tile.sprite) {
+                        var disT = displaceHex.tile.sprite;
+                        disT.x = hexagonX;
+                        disT.y = hexagonY;
+                    }
+                }
+            }
+
+            for(var hexX = 0; hexX < hexagonArray.length; hexX++) {
+                for(var hexY = 0; hexY < hexagonArray[hexX].length; hexY++) {
+                    var resizeHex = hexagonArray[hexX][hexY];
+                    resizeHex.scale.x = hexScale;
+                    resizeHex.scale.y = hexScale;
+
+                    if(resizeHex.tile && resizeHex.tile.sprite) {
+                        var t = resizeHex.tile.sprite;
+                        t.scale.x = hexScale;
+                        t.scale.y = hexScale;
+                    }
+                }
+            }
+
+            checkScale = false;
+        }
+
         if(hoverHex)
             placeMarker(hoverHex.x, hoverHex.y);
 
@@ -406,5 +462,25 @@ module.exports = {
                     hexagonArray[hex.x][hex.y].tint = selectedTint;
             }
         }
+    },
+    resize: function() {
+        hexagonGroup.y = (game.height - hexagonHeight * Math.ceil(gridSizeY)) / 2;
+        hexagonGroup.x = (game.width - Math.ceil(gridSizeX / 2) * hexagonWidth - Math.floor(gridSizeX / 2) * hexagonWidth / 2) / 2;
+
+        var maxWidth = game.width / gridSizeX; 
+        var maxHeight = game.height / gridSizeY;
+
+        var tempScale = hexScale;
+
+        if(maxWidth < hexagonWidth || maxHeight < hexagonHeight) {
+            var w = maxWidth / hexagonWidth;
+            var h = maxHeight / hexagonHeight;
+            hexScale = w < h ? w : h;
+        }
+        else {
+            hexScale = 1;
+        }
+
+        checkScale = true;
     }
 };
