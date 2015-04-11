@@ -53,10 +53,13 @@ function getHexPosition() {
     var xOffset = game.input.worldX - hexagonGroup.x;
     var yOffset = game.input.worldY - hexagonGroup.y;
 
-    var candidateX = Math.floor(xOffset / sectorWidth);
-    var candidateY = Math.floor(yOffset / sectorHeight);
-    var deltaX = xOffset % sectorWidth;
-    var deltaY = yOffset % sectorHeight;
+    var tempWidth = sectorWidth * hexScale;
+    var tempHeight = sectorHeight * hexScale;
+
+    var candidateX = Math.floor(xOffset / tempWidth);
+    var candidateY = Math.floor(yOffset / tempHeight);
+    var deltaX = xOffset % tempWidth;
+    var deltaY = yOffset % tempHeight;
 
     if(xOffset < 0 || yOffset < 0) {
         hoverHex = null;
@@ -216,9 +219,9 @@ module.exports = {
         var maxWidth = game.width / gridSizeX; 
         var maxHeight = game.height / gridSizeY;
 
-        if(maxWidth < hexagonWidth || maxHeight < hexagonHeight) {
+        if(maxWidth < hexagonWidth || maxHeight < hexagonHeight + hexagonHeight / 2) {
             var w = maxWidth / hexagonWidth;
-            var h = maxHeight / hexagonHeight;
+            var h = maxHeight / (hexagonHeight + hexagonHeight / 2);
             hexScale = w < h ? w : h;
         }
 
@@ -248,7 +251,7 @@ module.exports = {
             }
         }
 
-        hexagonGroup.y = (game.height - hexagonHeight * Math.ceil(gridSizeY)) / 2;
+        hexagonGroup.y = (game.height - hexagonHeight * hexScale * Math.ceil(gridSizeY / 2));
         hexagonGroup.x = (game.width - Math.ceil(gridSizeX / 2) * hexagonWidth - Math.floor(gridSizeX / 2) * hexagonWidth / 2) / 2;
 
         if(gridSizeY % 2 === 0)
@@ -298,7 +301,7 @@ module.exports = {
             selectedHexes = [];
         }
 
-        if(poppedHexes.length > 0) {
+        if(poppedHexes.length > 0 && !checkScale) {
             var leftOver = [];
             var tweens = [];
             _.forEach(poppedHexes, function(hex, index) {
@@ -308,8 +311,10 @@ module.exports = {
 
                 if(y === 0) {
                     var currHex = hexagonArray[x][y];
-                    tile = newTile(currHex.x, currHex.y - hexagonHeight);
+                    tile = newTile(currHex.x, currHex.y - hexagonHeight * hexScale);
                     tile.sprite.alpha = 0;
+                    tile.sprite.scale.x = hexScale;
+                    tile.sprite.scale.y = hexScale;
                     hexagonGroup.add(tile.sprite);
 
                     slideDown = game.add.tween(tile.sprite)
@@ -325,7 +330,7 @@ module.exports = {
                     tile = hexagonArray[x][y - 1].tile;
 
                     slideDown = game.add.tween(tile.sprite)
-                        .to({ y: tile.sprite.y + hexagonHeight }, tweenSpeed);
+                        .to({ y: tile.sprite.y + hexagonHeight * hexScale }, tweenSpeed);
 
                     slideDown.onComplete.add(function() {
                         hexagonArray[x][y].tile = tile;
@@ -392,6 +397,10 @@ module.exports = {
     render: function() {
         clearMarker();
         if(checkScale) {
+            checkScale = false;
+
+            hexagonGroup.y = (game.height - hexagonHeight * hexScale * gridSizeY) / 2;
+            hexagonGroup.x = (game.width - Math.ceil(gridSizeX / 2) * hexagonWidth - Math.floor(gridSizeX / 2) * hexagonWidth / 2) / 2;
 
             for(var i = 0; i < gridSizeX; i++) {
                 for(var j = 0; j < gridSizeY; j++) {
@@ -410,30 +419,19 @@ module.exports = {
 
                     displaceHex.x = hexagonX;
                     displaceHex.y = hexagonY;
+                    displaceHex.scale.x = hexScale;
+                    displaceHex.scale.y = hexScale;
 
                     if(displaceHex.tile && displaceHex.tile.sprite) {
                         var disT = displaceHex.tile.sprite;
                         disT.x = hexagonX;
                         disT.y = hexagonY;
+                        disT.scale.x = hexScale;
+                        disT.scale.y = hexScale;
                     }
                 }
             }
 
-            for(var hexX = 0; hexX < hexagonArray.length; hexX++) {
-                for(var hexY = 0; hexY < hexagonArray[hexX].length; hexY++) {
-                    var resizeHex = hexagonArray[hexX][hexY];
-                    resizeHex.scale.x = hexScale;
-                    resizeHex.scale.y = hexScale;
-
-                    if(resizeHex.tile && resizeHex.tile.sprite) {
-                        var t = resizeHex.tile.sprite;
-                        t.scale.x = hexScale;
-                        t.scale.y = hexScale;
-                    }
-                }
-            }
-
-            checkScale = false;
         }
 
         if(hoverHex)
@@ -464,17 +462,14 @@ module.exports = {
         }
     },
     resize: function() {
-        hexagonGroup.y = (game.height - hexagonHeight * Math.ceil(gridSizeY)) / 2;
-        hexagonGroup.x = (game.width - Math.ceil(gridSizeX / 2) * hexagonWidth - Math.floor(gridSizeX / 2) * hexagonWidth / 2) / 2;
-
         var maxWidth = game.width / gridSizeX; 
         var maxHeight = game.height / gridSizeY;
 
         var tempScale = hexScale;
 
-        if(maxWidth < hexagonWidth || maxHeight < hexagonHeight) {
+        if(maxWidth < hexagonWidth || maxHeight < hexagonHeight + hexagonHeight / 2) {
             var w = maxWidth / hexagonWidth;
-            var h = maxHeight / hexagonHeight;
+            var h = maxHeight / (hexagonHeight + hexagonHeight / 2);
             hexScale = w < h ? w : h;
         }
         else {
