@@ -182,6 +182,7 @@ function newTile(x, y) {
     t.points = type.points || t.points;
 
     t.sprite = game.add.sprite(x, y, t.type);
+    t.sound = game.add.audio('collect');
     return t;
 }
 
@@ -196,8 +197,10 @@ function genPointsText(obj) {
 
 module.exports = {
     preload: function() {
-        var hexagon = game.load.image('hexagon', 'assets/images/hexagon.png');
-        hexagon.onFileComplete.add(function() {
+        game.load.onFileComplete.add(function() {
+            if(arguments[1] !== 'hexagon')
+                return;
+
             var hex = game.add.sprite(0, 0, arguments[1]);
             hexagonWidth = hex.texture.width;
             hexagonHeight = hex.texture.height;
@@ -208,12 +211,16 @@ module.exports = {
             hex.destroy();
         });
 
+        game.load.audio('collect', ['assets/audio/Explosion6.m4a', 'assets/audio/Explosion6.ogg', 'assets/audio/Explosion6.wav']);
+
+        game.load.image('hexagon', 'assets/images/hexagon.png');
         game.load.image('red', 'assets/images/red-gem.png');
         game.load.image('green', 'assets/images/green-gem.png');
         game.load.image('blue', 'assets/images/blue-gem.png');
         game.load.image('purple', 'assets/images/purple-gem.png');
         game.load.image('yellow', 'assets/images/yellow-gem.png');
         game.load.image('link', 'assets/images/link.png');
+
     },
     create: function() {
         var maxWidth = game.width / gridSizeX; 
@@ -291,6 +298,7 @@ module.exports = {
                     });
 
                     fadeOut.start();
+                    tile.sound.play();
                 });
 
                 pointsText.text = genPointsText(collectedTiles);
